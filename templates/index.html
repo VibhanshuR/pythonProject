@@ -3,8 +3,15 @@
   <head>
     <meta charset="utf-8">
     <title>Form Submission</title>
+    <style>
+      .form-group {
+      border-left: 50px solid #007bff;
+      padding-left: 20px;
+    }
+    </style>
   </head>
   <body>
+    <div class="form-group">
     <h1>Submit Your Details</h1>
     <form action="/upload" method="post" enctype="multipart/form-data">
       <label for="name">Name:</label>
@@ -17,5 +24,6 @@
       <input type="file" id="file" name="file"><br><br>
       <input type="submit" value="Upload">
     </form>
+    </div>
   </body>
 </html>

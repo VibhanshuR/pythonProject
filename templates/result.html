@@ -3,13 +3,21 @@
   <head>
     <meta charset="utf-8">
     <title>Form Data and CSV Content</title>
+    <style>
+      .form-group {
+      border-left: 50px solid #007bff;
+      padding-left: 20px;
+    }
+    </style>
   </head>
   <body>
+  <div class="form-group">
     <h1>Submitted Data</h1>
     <p><strong>Name:</strong> {{ form_data.name }}</p>
     <p><strong>Age:</strong> {{ form_data.age }}</p>
     <p><strong>DOB:</strong> {{ form_data.dob }}</p>
     <h2>CSV Content</h2>
-    <div>{{ form_data.csv_data|safe }}</div>
+    <p>{{ form_data.csv_data|safe }}</p>
+  </div>
   </body>
 </html>
