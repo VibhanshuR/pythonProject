@@ -24,14 +24,11 @@ def upload_file():
         age = request.form['age']
         dob = request.form['dob']
 
-        # Save the file
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
         file.save(filepath)
 
-        # Read the CSV file
         data = pd.read_csv(filepath)
 
-        # Process the form data and CSV file
         form_data = {
             'name': name,
             'age': age,

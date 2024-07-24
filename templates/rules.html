@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apply Rules</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Apply Rules to CSV</h1>
+    <form method="POST">
+        <label for="column_name">Column Name:</label>
+        <select name="column_name" id="column_name">
+            {% for column in columns %}
+            <option value="{{ column }}">{{ column }}</option>
+            {% endfor %}
+        </select>
+        <label for="rule_type">Rule:</label>
+        <select name="rule_type" id="rule_type">
+            <option value="gte">Greater than or equal to</option>
+            <option value="lte">Less than or equal to</option>
+            <option value="eq">Equal to</option>
+            <option value="ml_gte">ML Greater than or equal to</option>
+        </select>
+        <label for="value">Value:</label>
+        <input type="number" name="value" step="any" required>
+        <button type="submit">Apply Rule</button>
+    </form>
+    <a href="/">Re-upload CSV</a>
+</body>
+</html>

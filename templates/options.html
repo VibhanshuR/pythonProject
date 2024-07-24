@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Options</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+</head>
+<body>
+    <h3>HOORAY! you have successfully upload the file</h3><br><br>
+    <form method="POST">
+        <button name="reupload" type="submit" class="btn btn-primary" a href="#" data-toggle="tooltip"
+                title="are you sure to reupload the file">Re-upload CSV</button>
+        <button name="proceed" type="submit" class="btn btn-primary" a href="#" data-toggle="tooltip"
+                title="go to filtration">Proceed to Rules</button>
+    </form>
+
+<script>
+$(document).ready(function(){
+  $('[data-toggle="tooltip"]').tooltip();
+});
+</script>
+</body>
+</html>
