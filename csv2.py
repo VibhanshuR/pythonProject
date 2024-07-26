@@ -1,103 +1,107 @@
-import os
-from flask import Flask, request, redirect, url_for, render_template, send_from_directory
+from flask import Flask, request, render_template, redirect, url_for
 import pandas as pd
-from werkzeug.utils import secure_filename
-from sklearn.tree import DecisionTreeClassifier
-import numpy as np
-
-UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'csv'}
+import os
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['UPLOAD_FOLDER'] = './uploads'
+
+nltk.download('punkt')
+nltk.download('stopwords')
+
+csv_data = None
 
 
-def allowed_file(filename):
-    return '.' in filename and \
-        filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+def parse_query(query, df):
+
+    tokens = word_tokenize(query.lower())
+
+    stop_words = set(stopwords.words('english'))
+    filtered_tokens = [w for w in tokens if not w in stop_words]
+
+    operators = {
+        'greater': '>',
+        'less': '<',
+        'equals': '==',
+        'equal': '=='
+    }
+
+    column_name = None
+    operator = None
+    value = None
+
+    for token in filtered_tokens:
+        if token in df.columns.str.lower():
+            column_name = token
+        elif token in operators:
+            operator = operators[token]
+        else:
+            try:
+                value = float(token)
+            except ValueError:
+                value = token
+
+    if column_name and operator and value is not None:
+        try:
+            column_name_actual = df.columns[df.columns.str.lower() == column_name][0]
+            if operator == '>':
+                result = df[df[column_name_actual] > value]
+            elif operator == '<':
+                result = df[df[column_name_actual] < value]
+            elif operator == '==':
+                result = df[df[column_name_actual] == value]
+            else:
+                result = pd.DataFrame()
+
+            return result
+        except Exception as e:
+            print("Error querying data:", e)
+            return pd.DataFrame()
+
+    return pd.DataFrame()
 
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
-    """Upload CSV File"""
     if request.method == 'POST':
-        # Check if the post request has the file part
         if 'file' not in request.files:
             return redirect(request.url)
-
         file = request.files['file']
 
         if file.filename == '':
             return redirect(request.url)
-
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        if file:
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(file_path)
-            return redirect(url_for('options', filename=filename))
-
+            global csv_data
+            csv_data = pd.read_csv(file_path)
+            return redirect(url_for('navigation'))
     return render_template('upload.html')
 
 
-@app.route('/options/<filename>', methods=['GET', 'POST'])
-def options(filename):
-    """Options Page to Re-upload or Proceed"""
+@app.route('/navigation', methods=['GET', 'POST'])
+def navigation():
     if request.method == 'POST':
         if 'reupload' in request.form:
             return redirect(url_for('upload_file'))
-        elif 'proceed' in request.form:
-            return redirect(url_for('rules', filename=filename))
-
+        elif 'next' in request.form:
+            return redirect(url_for('query_page'))
     return render_template('options.html')
 
 
-@app.route('/rules/<filename>', methods=['GET', 'POST'])
-def rules(filename):
-    """Apply Rules to the CSV"""
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    df = pd.read_csv(file_path)
-
+@app.route('/query', methods=['GET', 'POST'])
+def query_page():
+    global csv_data
     if request.method == 'POST':
-        column_name = request.form['column_name']
-        rule_type = request.form['rule_type']
-        value = float(request.form['value'])
-
-        if column_name in df.columns:
-            if rule_type == 'gte':
-                result_df = df[df[column_name] >= value]
-            elif rule_type == 'lte':
-                result_df = df[df[column_name] <= value]
-            elif rule_type == 'eq':
-                result_df = df[df[column_name] == value]
-            elif rule_type == 'ml_gte':
-                # Using ML Model to apply rule
-                clf = DecisionTreeClassifier()
-                # Assume the last column is the target variable
-                X = df.drop(columns=[column_name])
-                y = df[column_name] >= value
-                clf.fit(X, y)
-                predictions = clf.predict(X)
-                result_df = df[predictions == True]
-            else:
-                return "Invalid rule type specified."
-
-            result_filename = f"filtered_{filename}"
-            result_file_path = os.path.join(app.config['UPLOAD_FOLDER'], result_filename)
-            result_df.to_csv(result_file_path, index=False)
-
-            return render_template('result2.html', tables=[result_df.to_html(classes='data')],
-                                   titles=result_df.columns.values, filename=result_filename)
-
-    return render_template('rules.html', columns=df.columns.tolist())
+        user_query = request.form.get('query')
+        result = parse_query(user_query, csv_data)
+        return render_template('rules.html', tables=[result.to_html(classes='data', header="true")])
+    return render_template('rules.html')
 
 
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    """Download the filtered CSV"""
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-
-
-if __name__ == "__main__":
-    if not os.path.exists('uploads'):
-        os.makedirs('uploads')
+if __name__ == '__main__':
+    if not os.path.exists(app.config['UPLOAD_FOLDER']):
+        os.makedirs(app.config['UPLOAD_FOLDER'])
     app.run(debug=True)
